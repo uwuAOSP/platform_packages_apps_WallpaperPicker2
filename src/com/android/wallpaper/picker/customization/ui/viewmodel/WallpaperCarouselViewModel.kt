@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 class WallpaperCarouselViewModel
@@ -178,7 +179,7 @@ constructor(
      */
     val wallpaperCarouselItems: Flow<List<TileViewModel>> =
         combine(
-            curatedPhotoCarouselItems,
+            curatedPhotoCarouselItems.onStart { emit(emptyList()) },
             defaultWallpapersTileVieModels,
             creativeSectionViewModel,
             standaloneSectionViewModel,
