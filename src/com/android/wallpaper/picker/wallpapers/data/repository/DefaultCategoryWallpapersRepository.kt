@@ -81,7 +81,7 @@ constructor(
                 withContext(backgroundDispatcher) {
                     category.commonCategoryData.fetchWallpapers?.invoke(
                         category.commonCategoryData.collectionId
-                    )
+                    ) ?: category.collectionCategoryData?.wallpaperModels
                 }
             _selectedCategoryWallpapers.value = result ?: emptyList()
             _isWallpapersFetching.value = false

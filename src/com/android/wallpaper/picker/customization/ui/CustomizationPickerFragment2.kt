@@ -92,9 +92,13 @@ import com.android.wallpaper.picker.customization.ui.viewmodel.ColorUpdateViewMo
 import com.android.wallpaper.picker.customization.ui.viewmodel.CustomizationOptionsData
 import com.android.wallpaper.picker.customization.ui.viewmodel.CustomizationPickerViewModel2
 import com.android.wallpaper.picker.data.WallpaperModel
+import com.android.wallpaper.picker.data.category.CategoryModel
 import com.android.wallpaper.picker.di.modules.MainDispatcher
 import com.android.wallpaper.picker.preview.ui.WallpaperPreviewActivity
 import com.android.wallpaper.picker.preview.ui.view.ClickableMotionLayout
+import com.android.wallpaper.picker.category.data.repository.WallpaperCategoryRepository
+import com.android.wallpaper.picker.wallpapers.data.repository.CategoryWallpapersRepository
+import com.android.wallpaper.picker.wallpapers.ui.view.CategoryWallpapersFragment
 import com.android.wallpaper.util.ActivityUtils
 import com.android.wallpaper.util.CuratedPhotosTimeUtil
 import com.android.wallpaper.util.DisplayUtils
@@ -130,6 +134,8 @@ class CustomizationPickerFragment2 :
     @Inject lateinit var wallpaperModelFactory: WallpaperModelFactory
     @Inject lateinit var myPhotosStarterImpl: MyPhotosStarterImpl
     @Inject lateinit var iconStyleViewUtil: IconStyleViewUtil
+    @Inject lateinit var wallpaperCategoryRepository: WallpaperCategoryRepository
+    @Inject lateinit var categoryWallpapersRepository: CategoryWallpapersRepository
 
     private val customizationPickerViewModel: CustomizationPickerViewModel2 by viewModels()
 
@@ -756,13 +762,19 @@ class CustomizationPickerFragment2 :
                 activity?.startActivity(Intent(Settings.ACTION_DREAM_SETTINGS))
             },
             navigateToWallpaperCollectionScreen = { categoryId, categoryType ->
-                switchFragment(
-                    individualPickerFactory.getIndividualPickerInstance(
-                        categoryId,
-                        categoryType,
-                        customizationPickerViewModel.selectedPreviewScreen.value,
+                val categoryModel = findCategoryModelByCollectionId(categoryId)
+                if (BaseFlags.get().isWallpapersFragmentEnabled() && categoryModel != null) {
+                    categoryWallpapersRepository.setSelectedCategory(categoryModel)
+                    switchFragment(CategoryWallpapersFragment.newInstance())
+                } else {
+                    switchFragment(
+                        individualPickerFactory.getIndividualPickerInstance(
+                            categoryId,
+                            categoryType,
+                            customizationPickerViewModel.selectedPreviewScreen.value,
+                        )
                     )
-                )
+                }
             },
             navigateToExtendedWallpaperEffects = {
                 if (BaseFlags.get().isPhotoPickerEnabled()) {
@@ -796,6 +808,17 @@ class CustomizationPickerFragment2 :
             lifecycleOwner = viewLifecycleOwner,
             activity = requireActivity(),
         )
+    }
+
+    private fun findCategoryModelByCollectionId(collectionId: String): CategoryModel? {
+        return buildList {
+                wallpaperCategoryRepository.myPhotosCategory.value?.let(::add)
+                wallpaperCategoryRepository.onDeviceCategory.value?.let(::add)
+                addAll(wallpaperCategoryRepository.systemCategories.value)
+                addAll(wallpaperCategoryRepository.thirdPartyAppCategory.value)
+                addAll(wallpaperCategoryRepository.thirdPartyLiveWallpaperCategory.value)
+            }
+            .firstOrNull { it.commonCategoryData.collectionId == collectionId }
     }
 
     private fun switchFragment(fragment: Fragment) {
