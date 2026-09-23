@@ -59,6 +59,8 @@ constructor(@ApplicationContext private val context: Context) : WallpaperPrefere
     protected val noBackupPrefs: SharedPreferences =
         context.getSharedPreferences(NO_BACKUP_PREFS_NAME, Context.MODE_PRIVATE)
 
+    private val recentWallpaperStore = RecentWallpaperStore(context)
+
     private val backupManager = BackupManager(context)
     private val sharedPrefsChangedListener = OnSharedPreferenceChangeListener { _, _ ->
         backupManager.dataChanged()
@@ -909,7 +911,15 @@ constructor(@ApplicationContext private val context: Context) : WallpaperPrefere
         wallpaperId: String,
         wallpaper: LiveWallpaperInfo,
         colors: WallpaperColors,
-    ) {}
+    ) {
+        recentWallpaperStore.saveLiveWallpaper(
+            which = which,
+            wallpaperId = wallpaperId,
+            component = wallpaper.wallpaperComponent?.component?.flattenToString(),
+            colors = colors,
+            title = wallpaper.getTitle(context),
+        )
+    }
 
     override fun storeLatestWallpaper(
         @SetWallpaperFlags which: Int,
@@ -917,7 +927,15 @@ constructor(@ApplicationContext private val context: Context) : WallpaperPrefere
         wallpaper: WallpaperInfo,
         croppedWallpaperBitmap: Bitmap,
         colors: WallpaperColors,
-    ) {}
+    ) {
+        recentWallpaperStore.saveStaticWallpaper(
+            which = which,
+            wallpaperId = wallpaperId,
+            bitmap = croppedWallpaperBitmap,
+            colors = colors,
+            title = wallpaper.getTitle(context),
+        )
+    }
 
     override fun storeLatestWallpaper(
         @SetWallpaperFlags which: Int,
@@ -927,7 +945,15 @@ constructor(@ApplicationContext private val context: Context) : WallpaperPrefere
         collectionId: String?,
         croppedWallpaperBitmap: Bitmap,
         colors: WallpaperColors,
-    ) {}
+    ) {
+        recentWallpaperStore.saveStaticWallpaper(
+            which = which,
+            wallpaperId = wallpaperId,
+            bitmap = croppedWallpaperBitmap,
+            colors = colors,
+            title = attributions?.firstOrNull(),
+        )
+    }
 
     override suspend fun addStaticWallpaperToRecentWallpapers(
         destination: WallpaperDestination,

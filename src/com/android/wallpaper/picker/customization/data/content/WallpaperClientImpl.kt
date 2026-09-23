@@ -48,6 +48,7 @@ import com.android.wallpaper.model.Screen
 import com.android.wallpaper.model.StaticWallpaperPrefMetadata
 import com.android.wallpaper.model.WallpaperInfo
 import com.android.wallpaper.model.WallpaperModelsPair
+import com.android.wallpaper.module.RecentWallpaperStore
 import com.android.wallpaper.module.WallpaperPreferences
 import com.android.wallpaper.module.logging.UserEventLogger
 import com.android.wallpaper.module.logging.UserEventLogger.SetWallpaperEntryPoint
@@ -96,6 +97,7 @@ constructor(
     private var recentsContentProviderAvailable: Boolean? = null
     private val recentHomeWallpapers = MutableStateFlow<List<LegacyRecentWallpaperModel>?>(null)
     private val recentLockWallpapers = MutableStateFlow<List<LegacyRecentWallpaperModel>?>(null)
+    private val recentWallpaperStore = RecentWallpaperStore(context)
 
     init {
         backgroundScope.launch {
@@ -178,6 +180,15 @@ constructor(
             wallpaperPreferences.setStaticWallpaperMetadata(
                 metadata = wallpaperModel.getMetadata(bitmap, managerId),
                 destination = destination,
+            )
+
+            recentWallpaperStore.saveStaticWallpaper(
+                which = destination.toSetWallpaperFlags(),
+                wallpaperId = wallpaperModel.commonWallpaperData.id.wallpaperId,
+                bitmap = bitmap,
+                colors = wallpaperManager.getWallpaperColors(destination.toSetWallpaperFlags())
+                    ?: WallpaperColors.fromBitmap(bitmap),
+                title = wallpaperModel.commonWallpaperData.title,
             )
 
             logger.logWallpaperApplied(
@@ -325,6 +336,14 @@ constructor(
             wallpaperPreferences.setLiveWallpaperMetadata(
                 metadata = wallpaperModel.getMetadata(managerId),
                 destination = destination,
+            )
+
+            recentWallpaperStore.saveLiveWallpaper(
+                which = destination.toSetWallpaperFlags(),
+                wallpaperId = wallpaperModel.commonWallpaperData.id.wallpaperId,
+                component = wallpaperModel.commonWallpaperData.id.componentName.flattenToString(),
+                colors = wallpaperManager.getWallpaperColors(destination.toSetWallpaperFlags()),
+                title = wallpaperModel.commonWallpaperData.title,
             )
 
             logger.logWallpaperApplied(
