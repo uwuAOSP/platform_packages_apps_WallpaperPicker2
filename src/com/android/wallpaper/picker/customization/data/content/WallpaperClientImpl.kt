@@ -186,7 +186,7 @@ constructor(
                 which = destination.toSetWallpaperFlags(),
                 wallpaperId = wallpaperModel.commonWallpaperData.id.wallpaperId,
                 bitmap = bitmap,
-                colors = wallpaperManager.getWallpaperColors(destination.toSetWallpaperFlags())
+                colors = wallpaperManager.getWallpaperColors(destination.toWallpaperColorsFlag())
                     ?: WallpaperColors.fromBitmap(bitmap),
                 title = wallpaperModel.commonWallpaperData.title,
             )
@@ -342,7 +342,7 @@ constructor(
                 which = destination.toSetWallpaperFlags(),
                 wallpaperId = wallpaperModel.commonWallpaperData.id.wallpaperId,
                 component = wallpaperModel.commonWallpaperData.id.componentName.flattenToString(),
-                colors = wallpaperManager.getWallpaperColors(destination.toSetWallpaperFlags()),
+                colors = wallpaperManager.getWallpaperColors(destination.toWallpaperColorsFlag()),
                 title = wallpaperModel.commonWallpaperData.title,
             )
 
@@ -543,13 +543,21 @@ constructor(
             } else {
                 currentWallpapers.first
             }
-        val colors = wallpaperManager.getWallpaperColors(destination.toSetWallpaperFlags())
+        val colors = wallpaperManager.getWallpaperColors(destination.toWallpaperColorsFlag())
 
         return LegacyRecentWallpaperModel(
             wallpaperId = wallpaper.wallpaperId,
             placeholderColor = colors?.primaryColor?.toArgb() ?: Color.TRANSPARENT,
             title = wallpaper.getTitle(context),
         )
+    }
+
+    /** WallpaperManager.getWallpaperColors() accepts exactly one destination flag. */
+    private fun WallpaperDestination.toWallpaperColorsFlag(): Int {
+        return when (this) {
+            LOCK -> FLAG_LOCK
+            HOME, BOTH -> FLAG_SYSTEM
+        }
     }
 
     override suspend fun getCurrentWallpaperModels(forceRefresh: Boolean): WallpaperModelsPair {
